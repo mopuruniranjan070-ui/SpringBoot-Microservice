@@ -20,6 +20,8 @@ public class InventoryController {
 
     @PostMapping
     public InventoryDto addProduct(@RequestBody InventoryDto inventoryDto) {
+        System.out.println("Adding product to inventory");
+        System.out.println(inventoryDto);
         Inventory inventory = inventoryMapper.toEntity(inventoryDto);
         Inventory saved = inventoryRepository.save(inventory);
         return inventoryMapper.toDto(saved);
