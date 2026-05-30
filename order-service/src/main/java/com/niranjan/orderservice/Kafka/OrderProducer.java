@@ -16,6 +16,7 @@ public class OrderProducer {
     }
 
     public void sendOrderCreated(OrderCreatedEvent event) {
+        System.out.println("Sending Order Created Event");
         kafkaTemplate.send("order-created-topic", event);
     }
 }
