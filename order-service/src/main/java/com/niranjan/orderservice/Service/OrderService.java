@@ -1,10 +1,8 @@
 package com.niranjan.orderservice.Service;
 
 
-import com.niranjan.commonlib.Dto.AppUserDto;
-import com.niranjan.commonlib.Dto.InventoryDto;
-import com.niranjan.commonlib.Dto.OrderCreatedEvent;
-import com.niranjan.commonlib.Dto.PaymentDto;
+import com.niranjan.commonlib.Dto.*;
+import com.niranjan.orderservice.Kafka.InventoryProducer;
 import com.niranjan.orderservice.Kafka.OrderProducer;
 import com.niranjan.orderservice.client.InventoryClient;
 import com.niranjan.orderservice.client.PaymentClient;
@@ -20,16 +18,19 @@ import org.springframework.stereotype.Service;
 public class OrderService {
 
     private  final OrderRepository orderRepository;
-    private final OrderProducer orderProducer;
+    private final InventoryProducer orderProducer;
+    private final OrderProducer orderCreatedEvent;
     private final UserClient userClient;
     private final InventoryClient inventoryClient;
     private final PaymentClient paymentClient;
 
 
-    public OrderService(OrderRepository orderRepository, OrderProducer orderProducer, UserClient userClient, InventoryClient inventoryClient, PaymentClient paymentClient) {
+    public OrderService(OrderRepository orderRepository, InventoryProducer orderProducer, UserClient userClient, InventoryClient inventoryClient,
+                        PaymentClient paymentClient, OrderProducer orderCreatedEvent) {
         this.orderRepository = orderRepository;
         this.orderProducer = orderProducer;
         this.userClient = userClient;
+        this.orderCreatedEvent = orderCreatedEvent;
         this.inventoryClient = inventoryClient;
         this.paymentClient = paymentClient;
     }
@@ -41,17 +42,27 @@ public class OrderService {
             throw new InvalidRequestException("Cannot create order: User not available");
         }
 
-        InventoryDto inventory = inventoryClient.getstock(productNames,token);
-        if (inventory.getStock()<=0) {
-            throw new InvalidRequestException("Cannot create order: Product not available");
-        }
-        inventoryClient.reduceStock(productNames,token);
-
+//        InventoryDto inventory = inventoryClient.getstock(productNames,token);
+//        if (inventory.getStock()<=0) {
+//            throw new InvalidRequestException("Cannot create order: Product not available");
+//        }
+//        inventoryClient.reduceStock(productNames,token);
+        InventoryCheckEvent event = new InventoryCheckEvent(productNames,userId,email);
+        orderProducer.sendInventoryCheckEvent(event);
         OrderUser orderUser = new OrderUser();
         orderUser.setUserId(userId);
         orderUser.setProductName(productNames);
         orderUser.setEmail(email);
         orderRepository.save(orderUser);
+OrderCreatedEvent orderCreated = new OrderCreatedEvent(
+        orderUser.getId(),
+        orderUser.getUserId(),
+        orderUser.getProductName(),
+        orderUser.getEmail()
+);
+        orderCreatedEvent.sendOrderCreated(orderCreated);
+        System.out.println("✅ Order event published to Kafka for product: " + productNames);
+
 
         PaymentDto paymentDto = PaymentDto.builder()
                 .orderId(orderUser.getId())   // generated after save
@@ -64,10 +75,6 @@ public class OrderService {
 
         }
         // create event
-        OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(
-                orderUser.getId(), orderUser.getUserId(), orderUser.getProductName(), orderUser.getEmail()
-        );
-        orderProducer.sendOrderCreated(orderCreatedEvent);
 return orderUser;
     }
 }

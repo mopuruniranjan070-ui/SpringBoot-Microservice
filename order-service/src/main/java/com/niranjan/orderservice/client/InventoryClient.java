@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name="inventory-service",fallback = InventoryClientFallback.class )
+@FeignClient(name="inventory-service",fallback = InventoryClientFallback.class)
 public interface InventoryClient {
 
     @TimeLimiter(name = "inventoryServiceTimeLimiter")
@@ -24,8 +24,7 @@ public interface InventoryClient {
     @Retry(name = "inventoryServiceRetry")
     @CircuitBreaker(name = "inventoryServiceCircuitBreaker")
     @GetMapping("/inventory/{productName}")
-    InventoryDto getstock(@PathVariable("productName") String productNames,
-                          @RequestHeader("Authorization") String token);
+    InventoryDto getstock(@PathVariable("productName") String productNames, @RequestHeader("Authorization") String token);
 
     @TimeLimiter(name = "inventoryServiceTimeLimiter")
     @RateLimiter(name = "inventoryServiceRateLimiter")
