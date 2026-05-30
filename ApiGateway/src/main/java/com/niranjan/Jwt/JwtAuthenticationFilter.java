@@ -24,7 +24,7 @@ public class JwtAuthenticationFilter implements GlobalFilter {
         String path = request.getURI().getPath().toLowerCase();
 
         // 🪶 Debug log to confirm incoming path
-        System.out.println("Incoming path: " + path);
+        System.out.println("Incoming path from user service: " + path);
 
         // ✅ Skip authentication for login/register endpoints (flexible match)
         if (path.matches(".*/users(/login|/register)?$")) {
