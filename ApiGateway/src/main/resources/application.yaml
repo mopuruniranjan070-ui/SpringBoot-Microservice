@@ -1,0 +1,47 @@
+server:
+  port: 8080   # Gateway runs on 8080 (entry point)
+
+spring:
+  application:
+    name: gateway-service
+
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/users/**
+            - Path=/users
+          filters:
+            # ✅ Preserve /users prefix when forwarding
+            - RewritePath=/users/(?<segment>.*), /users/${segment}
+
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/inventory/**
+          filters:
+            - RewritePath=/inventory/(?<segment>.*), /inventory/${segment}
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/payments/**
+          filters:
+            - RewritePath=/payments/(?<segment>.*), /payments/${segment}
+
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/orders/**
+          filters:
+            - RewritePath=/orders/(?<segment>.*), /orders/${segment}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+jwt:
+  secret: mysecretkey1234567890mysecretkey1234567890

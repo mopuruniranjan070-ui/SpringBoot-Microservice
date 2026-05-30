@@ -1,0 +1,103 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: ORDER-SERVICE
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/ordersdb
+    username: postgres
+    password: mynewpassword   # same as docker-compose.yml
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate.jdbc.time_zone: Asia/Kolkata
+  jackson:
+    time-zone: Asia/Kolkata
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    properties:
+      spring.json.trusted.packages: "com.niranjan.commonlib.Dto"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      userServiceCircuitBreaker:
+        failureRateThreshold: 50
+        slidingWindowSize: 10
+      inventoryServiceCircuitBreaker:
+        failureRateThreshold: 50
+        slidingWindowSize: 10
+      paymentServiceCircuitBreaker:
+        failureRateThreshold: 50
+        slidingWindowSize: 10
+      notificationServiceCircuitBreaker:
+        failureRateThreshold: 50
+        slidingWindowSize: 10
+
+  retry:
+    instances:
+      userServiceRetry:
+        maxAttempts: 3
+        waitDuration: 2s
+      inventoryServiceRetry:
+        maxAttempts: 3
+        waitDuration: 2s
+      paymentServiceRetry:
+        maxAttempts: 3
+        waitDuration: 2s
+      notificationServiceRetry:
+        maxAttempts: 3
+        waitDuration: 2s
+
+  ratelimiter:
+    instances:
+      userServiceRateLimiter:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1s
+      inventoryServiceRateLimiter:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1s
+      paymentServiceRateLimiter:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1s
+      notificationServiceRateLimiter:
+        limitForPeriod: 5
+        limitRefreshPeriod: 1s
+
+  timelimiter:
+    instances:
+      userServiceTimeLimiter:
+        timeoutDuration: 3s
+      inventoryServiceTimeLimiter:
+        timeoutDuration: 3s
+      paymentServiceTimeLimiter:
+        timeoutDuration: 3s
+      notificationServiceTimeLimiter:
+        timeoutDuration: 3s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  health:
+    circuitbreakers:
+      enabled: true
+  metrics:
+    tags:
+      application: ORDER-SERVICE
+logging:
+  level:
+    io.github.resilience4j.retry: DEBUG
+    io.github.resilience4j.circuitbreaker: DEBUG
+    org.springframework.web.client: DEBUG
+    org.springframework.aop: DEBUG
+    io.github.resilience4j.ratelimiter: DEBUG
+    io.github.resilience4j.timelimiter: DEBUG
